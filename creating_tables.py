@@ -4,35 +4,40 @@ import xlrd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-file_name = "./inputs/upstairs_with_barometer_1.xls";
+file_path = "./inputs/"
 
-df_upstairs_accel = pd.read_excel(open(file_name, 'rb'), sheet_name="Accelerometer");
-df_upstairs_gyro = pd.read_excel(open(file_name, 'rb'), sheet_name="Gyroscope");
-df_upstairs_accel_linear = pd.read_excel(open(file_name, 'rb'), sheet_name="Linear Acceleration");
+# gathering upstairs data
+file_names = ["upstairs_with_barometer_1.xls", "upstairs_with_barometer_2.xls"];
+df_upstairs_accel_list = [];
+df_upstairs_gyro_list = [];
+df_upstairs_accel_linear_list = [];
+
+for file_name in file_names:
+    file_name = file_path + file_name;
+    df_upstairs_accel_list.append(pd.read_excel(open(file_name, 'rb'), sheet_name="Accelerometer"));
+    df_upstairs_gyro_list.append(pd.read_excel(open(file_name, 'rb'), sheet_name="Gyroscope"));
+    df_upstairs_accel_linear_list.append(pd.read_excel(open(file_name, 'rb'), sheet_name="Linear Acceleration"));
+
+df_upstairs_accel = pd.concat(df_upstairs_accel_list);
+df_upstairs_gyro = pd.concat(df_upstairs_gyro_list);
+df_upstairs_accel_linear = pd.concat(df_upstairs_accel_linear_list);
 
 
-# file_name = "./inputs/downstairs_with_barometer_1.xls";
-# df_downstairs_accel = pd.read_excel(file_name, sheet_name="Accelerometer");
+# gathering downstairs data
+file_names = ["downstairs_with_barometer_1.xls", "downstairs_with_barometer_2.xls"];
+df_downstairs_accel_list = [];
+df_downstairs_gyro_list = [];
+df_downstairs_accel_linear_list = [];
 
+for file_name in file_names:
+    file_name = file_path + file_name;
+    df_downstairs_accel_list.append(pd.read_excel(open(file_name, 'rb'), sheet_name="Accelerometer"));
+    df_downstairs_gyro_list.append(pd.read_excel(open(file_name, 'rb'), sheet_name="Gyroscope"));
+    df_downstairs_accel_linear_list.append(pd.read_excel(open(file_name, 'rb'), sheet_name="Linear Acceleration"));
 
-# #to access the entire data frame
-# print(df_upstairs_accel);
-#
-# #to access the second column:
-# print(df_upstairs_accel.get("Acceleration x (m/s^2)"));
-#
-# #print mean, std, min, max, etc:
-# print(df_upstairs_accel.iloc[:, [1, 2, 3]].describe());
-#
-# #check for null entries:
-# print(df_upstairs_accel.iloc[:, [1, 2, 3]].info());
-#
-# #visualize the datasets
-# df_upstairs_accel.plot(x="Time (s)", y= [1, 2, 3]);
-# plt.show();
-#
-# df_downstairs_accel.plot(x="Time (s)", y= [1, 2, 3]);
-# plt.show();
+df_downstairs_accel = pd.concat(df_downstairs_accel_list);
+df_downstairs_gyro = pd.concat(df_downstairs_gyro_list);
+df_downstairs_accel_linear = pd.concat(df_downstairs_accel_linear_list);
 
 # calculates given function from a triaxial table
 # parameters:
@@ -81,23 +86,17 @@ def calculateMag(source_df, data_name):
 
 # wrappers to pass methods of generic objects:
 def mean(n): return n.mean();
-
-
 def std(n): return n.std();
-
-
 def mad(n): return (n - n.mean()).abs().mean();
-
-
 def min(n): return n.min();
-
-
 def max(n): return n.max();
 
 def energy(n): return n.pow(2).sum()/len(n.index);
 
+def iqr(n): q75, q25 = np.percentile(n.iloc[:,[0]], [75 ,25]); iqr = q75 - q25; return iqr;
 
-functions = [mean, std, mad, min, max, energy];
+
+functions = [mean, std, mad, min, max, energy, iqr];
 
 
 class Measurement:
@@ -113,24 +112,49 @@ gyroscopeMag = Measurement("tGyroMag", calculateMag(df_upstairs_gyro, "tGyro"));
 accelerationLinear = Measurement("tAccLinear", df_upstairs_accel_linear.iloc[:, [1, 2, 3]]);
 accelerationLinearMag = Measurement("tAccLinear", calculateMag(df_upstairs_accel_linear, "tAccLinear"));
 
-
-
-measurements = [accelerationLinear, accelerationLinearMag,  gyroscope, gyroscopeMag,acceleration, accelerationMag]
+measurementsUp = [acceleration, accelerationMag,  gyroscope, gyroscopeMag, accelerationLinear, accelerationLinearMag]
 
 tables = [];
-for measurement in measurements:
+for measurement in measurementsUp:
     for function in functions:
-        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 5, -4);
+        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 120, -4);
         tables.append(table);
 
         print(table);
 
+tableUp = pd.concat(tables, axis=1)
+label = ["WALKING_UPSTAIRS"] * len(tableUp.index);
+tableUp["Activity"] = label;
 
-fullTableUp = pd.concat(tables, axis=1)
-label = ["WALKING_UPSTAIRS"] * len(fullTableUp.index);
-fullTableUp["Activity"] = label;
-fullTableUp.to_csv("./prepared_tables/full_table_upstairs.csv", index=False, mode='w+');
-print(fullTableUp);
+
+acceleration = Measurement("tAcc", df_downstairs_accel.iloc[:, [1, 2, 3]]);   # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
+accelerationMag = Measurement("tAccMag", calculateMag(df_downstairs_accel, "tAcc"));
+gyroscope = Measurement("tGyro", df_downstairs_gyro.iloc[:, [1, 2, 3]]);
+gyroscopeMag = Measurement("tGyroMag", calculateMag(df_downstairs_gyro, "tGyro"));
+accelerationLinear = Measurement("tAccLinear", df_downstairs_accel_linear.iloc[:, [1, 2, 3]]);
+accelerationLinearMag = Measurement("tAccLinear", calculateMag(df_downstairs_accel_linear, "tAccLinear"));
+
+measurementsDown = [acceleration, accelerationMag,  gyroscope, gyroscopeMag, accelerationLinear, accelerationLinearMag]
+
+tables = [];
+for measurement in measurementsDown:
+    for function in functions:
+        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 120, -4);
+        tables.append(table);
+
+        print(table);
+
+tableDown = pd.concat(tables, axis=1)
+label = ["WALKING_DOWNSTAIRS"] * len(tableDown.index);
+tableDown["Activity"] = label;
+
+fullTable = pd.concat([tableUp, tableDown]);
+
+fullTable.to_csv("./prepared_tables/fullTable.csv", index=False, mode='w+');
+print(fullTable);
+
+
+
 ## manually:
 # measurement_name_XYZ = "tBodyAcc";
 # source = df_upstairs_accel.iloc[:, [1, 2, 3]];
