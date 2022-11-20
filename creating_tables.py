@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import xlrd
 import matplotlib as mpl
@@ -31,29 +32,6 @@ df_upstairs_accel = pd.read_excel(open(file_name, 'rb'), sheet_name="Acceleromet
 # df_downstairs_accel.plot(x="Time (s)", y= [1, 2, 3]);
 # plt.show();
 
-
-def calculateMean(source_df, data_name, chunkAmount):
-    calculation = "mean";
-    X = data_name + "-" + calculation + "()" + "-X";
-    Y = data_name + "-" + calculation + "()" + "-Y";
-    Z = data_name + "-" + calculation + "()" + "-Z";
-    chunkSize = int(len(source_df.index) / chunkAmount);
-    dict_temp = {X: [source_df.iloc[0:chunkSize, [0]].mean().item()],
-                 Y: [source_df.iloc[0:chunkSize, [1]].mean().item()],
-                 Z: [source_df.iloc[0:chunkSize, [2]].mean().item()]};
-    for i in range(chunkSize + 4, len(source_df.index),
-                   chunkSize):  # to-do: calibrate starting index for evening out the mean values (esp Z axis)
-        list_temp = [source_df.iloc[i:i + chunkSize, [0]].mean().item(),
-                     source_df.iloc[i:i + chunkSize, [1]].mean().item(),
-                     source_df.iloc[i:i + chunkSize, [2]].mean().item()];
-        dict_temp[X].append(list_temp[0]);
-        dict_temp[Y].append(list_temp[1]);
-        dict_temp[Z].append(list_temp[2]);
-
-    data_frame = pd.DataFrame(data=dict_temp);
-    return data_frame;
-
-
 # calculates given function from a triaxial table
 # parameters:
 # sourceDict: n x 3 dictionary of, for example, acceleration data - accel_x , accel_y and accel_z.
@@ -62,47 +40,103 @@ def calculateMean(source_df, data_name, chunkAmount):
 # startIndex: for calibration
 def calculateGeneric(funcName, func, source_df, data_name, chunkAmount, startIndex):
     calculation = funcName;
-    X = data_name + "-" + calculation + "()" + "-X";
-    Y = data_name + "-" + calculation + "()" + "-Y";
-    Z = data_name + "-" + calculation + "()" + "-Z";
-    chunkSize = int(len(source_df.index) / chunkAmount);
-    dict_temp = {X: [func(source_df.iloc[0:chunkSize, [0]]).item()], Y: [func(source_df.iloc[0:chunkSize, [1]]).item()],
-                 Z: [func(source_df.iloc[0:chunkSize, [2]]).item()]};
-    for i in range(chunkSize + startIndex, len(source_df.index)-1, chunkSize):
-        list_temp = [func(source_df.iloc[i:i + chunkSize, [0]]).item(),
-                     func(source_df.iloc[i:i + chunkSize, [1]]).item(),
-                     func(source_df.iloc[i:i + chunkSize, [2]]).item()];
-        dict_temp[X].append(list_temp[0]);
-        dict_temp[Y].append(list_temp[1]);
-        dict_temp[Z].append(list_temp[2]);
+    if (len(source_df.columns) > 1):
+        X = data_name + "-" + calculation + "()" + "-X";
+        Y = data_name + "-" + calculation + "()" + "-Y";
+        Z = data_name + "-" + calculation + "()" + "-Z";
+        chunkSize = int(len(source_df.index) / chunkAmount);
+        dict_temp = {X: [func(source_df.iloc[0:chunkSize, [0]]).item()],
+                     Y: [func(source_df.iloc[0:chunkSize, [1]]).item()],
+                     Z: [func(source_df.iloc[0:chunkSize, [2]]).item()]};
+        for i in range(chunkSize + startIndex, len(source_df.index) - 1, chunkSize):
+            list_temp = [func(source_df.iloc[i:i + chunkSize, [0]]).item(),
+                         func(source_df.iloc[i:i + chunkSize, [1]]).item(),
+                         func(source_df.iloc[i:i + chunkSize, [2]]).item()];
+            dict_temp[X].append(list_temp[0]);
+            dict_temp[Y].append(list_temp[1]);
+            dict_temp[Z].append(list_temp[2]);
+    else:
+        X = data_name + "-" + calculation + "()";
+        chunkSize = int(len(source_df.index) / chunkAmount);
+        dict_temp = {X: [func(source_df.iloc[0:chunkSize, [0]]).item()]};
+        for i in range(chunkSize + startIndex, len(source_df.index) - 1, chunkSize):
+            list_temp = [func(source_df.iloc[i:i + chunkSize, [0]]).item()];
+            dict_temp[X].append(list_temp[0]);
 
+    data_frame = pd.DataFrame(data=dict_temp);
+    return data_frame;
+
+
+def calculateMag(source_df, data_name):
+    calculation = 'Mag';
+    header = data_name + calculation;
+    rows = np.sqrt(source_df.iloc[:, 0] ** 2 + source_df.iloc[:, 1] ** 2 + source_df.iloc[:, 2] ** 2).values.tolist()
+
+    dict_temp = {header: rows};
     data_frame = pd.DataFrame(data=dict_temp);
     return data_frame;
 
 
 # wrappers to pass methods of generic objects:
 def mean(n): return n.mean();
+
+
 def std(n): return n.std();
-#mad
+
+
+def mad(n): return (n - n.mean()).abs().mean();
+
+
 def min(n): return n.min();
+
+
 def max(n): return n.max();
 
+def energy(n): return n.pow(2).sum()/len(n.index);
 
-measurement_name_XYZ = "tBodyAcc";
-source = df_upstairs_accel.iloc[:, [1, 2, 3]];
 
-meanTable = calculateGeneric('mean', mean, source, measurement_name_XYZ, 5, 4);
-meanTable.to_csv("./prepared_tables/mean.csv", index=False, mode='w+');
-print(meanTable);
+functions = [mean, std, mad, min, max, energy];
 
-stdTable = calculateGeneric('std', std, source, measurement_name_XYZ, 5, 0);
-stdTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
-print(stdTable);
 
-minTable = calculateGeneric('min', min, source, measurement_name_XYZ, 5, 0);
-minTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
-print(minTable);
+class Measurement:
+    def __init__(self, name, source):
+        self.name = name
+        self.source = source
 
-maxTable = calculateGeneric('max', max, source, measurement_name_XYZ, 5, 0);
-maxTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
-print(maxTable);
+
+acceleration = Measurement("tBodyAcc", df_upstairs_accel.iloc[:, [1, 2, 3]]);
+accelerationMag = Measurement("tBodyAccMag", calculateMag(df_upstairs_accel, "tBodyAcc"));
+# print(acceleration);
+
+measurements = [acceleration, accelerationMag]
+
+tables = [];
+for measurement in measurements:
+    for function in functions:
+        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 5, 4);
+        tables.append(table);
+
+        print(table);
+
+fullTable = pd.concat(tables, axis=1)
+fullTable.to_csv("./prepared_tables/full_table.csv", index=False, mode='w+');
+print(fullTable);
+## manually:
+# measurement_name_XYZ = "tBodyAcc";
+# source = df_upstairs_accel.iloc[:, [1, 2, 3]];
+
+# meanTable = calculateGeneric('mean', mean, source, measurement_name_XYZ, 5, 4);
+# meanTable.to_csv("./prepared_tables/mean.csv", index=False, mode='w+');
+# print(meanTable);
+#
+# stdTable = calculateGeneric('std', std, source, measurement_name_XYZ, 5, 0);
+# stdTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
+# print(stdTable);
+#
+# minTable = calculateGeneric('min', min, source, measurement_name_XYZ, 5, 0);
+# minTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
+# print(minTable);
+#
+# maxTable = calculateGeneric('max', max, source, measurement_name_XYZ, 5, 0);
+# maxTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
+# print(maxTable);
