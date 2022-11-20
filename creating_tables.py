@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 file_name = "./inputs/upstairs_with_barometer_1.xls";
 
 df_upstairs_accel = pd.read_excel(open(file_name, 'rb'), sheet_name="Accelerometer");
+df_upstairs_gyro = pd.read_excel(open(file_name, 'rb'), sheet_name="Gyroscope");
+df_upstairs_accel_linear = pd.read_excel(open(file_name, 'rb'), sheet_name="Linear Acceleration");
 
 
 # file_name = "./inputs/downstairs_with_barometer_1.xls";
@@ -104,23 +106,31 @@ class Measurement:
         self.source = source
 
 
-acceleration = Measurement("tBodyAcc", df_upstairs_accel.iloc[:, [1, 2, 3]]);
-accelerationMag = Measurement("tBodyAccMag", calculateMag(df_upstairs_accel, "tBodyAcc"));
-# print(acceleration);
+acceleration = Measurement("tAcc", df_upstairs_accel.iloc[:, [1, 2, 3]]);   # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
+accelerationMag = Measurement("tAccMag", calculateMag(df_upstairs_accel, "tAcc"));
+gyroscope = Measurement("tGyro", df_upstairs_gyro.iloc[:, [1, 2, 3]]);
+gyroscopeMag = Measurement("tGyroMag", calculateMag(df_upstairs_gyro, "tGyro"));
+accelerationLinear = Measurement("tAccLinear", df_upstairs_accel_linear.iloc[:, [1, 2, 3]]);
+accelerationLinearMag = Measurement("tAccLinear", calculateMag(df_upstairs_accel_linear, "tAccLinear"));
 
-measurements = [acceleration, accelerationMag]
+
+
+measurements = [accelerationLinear, accelerationLinearMag,  gyroscope, gyroscopeMag,acceleration, accelerationMag]
 
 tables = [];
 for measurement in measurements:
     for function in functions:
-        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 5, 4);
+        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 5, -4);
         tables.append(table);
 
         print(table);
 
-fullTable = pd.concat(tables, axis=1)
-fullTable.to_csv("./prepared_tables/full_table.csv", index=False, mode='w+');
-print(fullTable);
+
+fullTableUp = pd.concat(tables, axis=1)
+label = ["WALKING_UPSTAIRS"] * len(fullTableUp.index);
+fullTableUp["Activity"] = label;
+fullTableUp.to_csv("./prepared_tables/full_table_upstairs.csv", index=False, mode='w+');
+print(fullTableUp);
 ## manually:
 # measurement_name_XYZ = "tBodyAcc";
 # source = df_upstairs_accel.iloc[:, [1, 2, 3]];
