@@ -85,15 +85,13 @@ def calculateMag(source_df, data_name):
 def mean(n): return n.mean();
 def std(n): return n.std();
 def mad(n): return (n - n.mean()).abs().mean();
-def min(n): return n.min();
 def max(n): return n.max();
-
+def min(n): return n.min();
 def energy(n): return n.pow(2).sum()/len(n.index);
-
 def iqr(n): q75, q25 = np.percentile(n.iloc[:,[0]], [75 ,25]); iqr = q75 - q25; return iqr;
 
 
-functions = [mean, std, mad, min, max, energy, iqr];
+functions = [mean, std, mad, max, min, energy, iqr];
 
 
 class Measurement:
@@ -146,6 +144,9 @@ label = ["WALKING_DOWNSTAIRS"] * len(tableDown.index);
 tableDown["Activity"] = label;
 
 fullTable = pd.concat([tableUp, tableDown]);
+
+
+
 
 fullTable.to_csv("./prepared_tables/fullTable.csv", index=False, mode='w+');
 print(fullTable);
