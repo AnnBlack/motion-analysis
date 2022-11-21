@@ -112,7 +112,7 @@ measurementsUp = [accelerationLinear,  acceleration,  gyroscope, accelerationLin
 tables = [];
 for measurement in measurementsUp:
     for function in functions:
-        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 120, -4);
+        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 1180, -4);
         tables.append(table);
 
         print(table);
@@ -134,7 +134,7 @@ measurementsDown = [accelerationLinear,  acceleration,  gyroscope, accelerationL
 tables = [];
 for measurement in measurementsDown:
     for function in functions:
-        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 120, -4);
+        table = calculateGeneric(function.__name__, function, measurement.source, measurement.name, 1180, -4);
         tables.append(table);
 
         print(table);
