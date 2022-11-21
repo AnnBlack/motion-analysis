@@ -1,8 +1,5 @@
 import numpy as np
 import pandas as pd
-import xlrd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 
 file_path = "./inputs/"
 
@@ -154,23 +151,3 @@ fullTable.to_csv("./prepared_tables/fullTable.csv", index=False, mode='w+');
 print(fullTable);
 
 
-
-## manually:
-# measurement_name_XYZ = "tBodyAcc";
-# source = df_upstairs_accel.iloc[:, [1, 2, 3]];
-
-# meanTable = calculateGeneric('mean', mean, source, measurement_name_XYZ, 5, 4);
-# meanTable.to_csv("./prepared_tables/mean.csv", index=False, mode='w+');
-# print(meanTable);
-#
-# stdTable = calculateGeneric('std', std, source, measurement_name_XYZ, 5, 0);
-# stdTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
-# print(stdTable);
-#
-# minTable = calculateGeneric('min', min, source, measurement_name_XYZ, 5, 0);
-# minTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
-# print(minTable);
-#
-# maxTable = calculateGeneric('max', max, source, measurement_name_XYZ, 5, 0);
-# maxTable.to_csv("./prepared_tables/std.csv", index=False, mode='w+');
-# print(maxTable);
