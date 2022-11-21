@@ -102,14 +102,14 @@ class Measurement:
         self.source = source
 
 
-acceleration = Measurement("tAcc", df_upstairs_accel.iloc[:, [1, 2, 3]]);   # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
-accelerationMag = Measurement("tAccMag", calculateMag(df_upstairs_accel, "tAcc"));
-gyroscope = Measurement("tGyro", df_upstairs_gyro.iloc[:, [1, 2, 3]]);
-gyroscopeMag = Measurement("tGyroMag", calculateMag(df_upstairs_gyro, "tGyro"));
-accelerationLinear = Measurement("tAccLinear", df_upstairs_accel_linear.iloc[:, [1, 2, 3]]);
-accelerationLinearMag = Measurement("tAccLinear", calculateMag(df_upstairs_accel_linear, "tAccLinear"));
+acceleration = Measurement("tGravityAcc", df_upstairs_accel.iloc[:, [1, 2, 3]]);   # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
+accelerationMag = Measurement("tGravityAccMag", calculateMag(df_upstairs_accel, "tGravityAcc"));
+gyroscope = Measurement("tBodyGyro", df_upstairs_gyro.iloc[:, [1, 2, 3]]);
+gyroscopeMag = Measurement("tBodyGyroMag", calculateMag(df_upstairs_gyro, "tBodyGyro"));
+accelerationLinear = Measurement("tBodyAcc", df_upstairs_accel_linear.iloc[:, [1, 2, 3]]);
+accelerationLinearMag = Measurement("tBodyAccMag", calculateMag(df_upstairs_accel_linear, "tBodyAcc"));
 
-measurementsUp = [acceleration, accelerationMag,  gyroscope, gyroscopeMag, accelerationLinear, accelerationLinearMag]
+measurementsUp = [accelerationLinear,  acceleration,  gyroscope, accelerationLinearMag, accelerationMag,  gyroscopeMag]
 
 tables = [];
 for measurement in measurementsUp:
@@ -124,14 +124,14 @@ label = ["WALKING_UPSTAIRS"] * len(tableUp.index);
 tableUp["Activity"] = label;
 
 
-acceleration = Measurement("tAcc", df_downstairs_accel.iloc[:, [1, 2, 3]]);   # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
-accelerationMag = Measurement("tAccMag", calculateMag(df_downstairs_accel, "tAcc"));
-gyroscope = Measurement("tGyro", df_downstairs_gyro.iloc[:, [1, 2, 3]]);
-gyroscopeMag = Measurement("tGyroMag", calculateMag(df_downstairs_gyro, "tGyro"));
-accelerationLinear = Measurement("tAccLinear", df_downstairs_accel_linear.iloc[:, [1, 2, 3]]);
-accelerationLinearMag = Measurement("tAccLinear", calculateMag(df_downstairs_accel_linear, "tAccLinear"));
+acceleration = Measurement("tGravityAcc", df_downstairs_accel.iloc[:, [1, 2, 3]]);   # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
+accelerationMag = Measurement("tGravityAccMag", calculateMag(df_downstairs_accel, "tGravityAcc"));
+gyroscope = Measurement("tBodyGyro", df_downstairs_gyro.iloc[:, [1, 2, 3]]);
+gyroscopeMag = Measurement("tBodyGyroMag", calculateMag(df_downstairs_gyro, "tBodyGyro"));
+accelerationLinear = Measurement("tBodyAcc", df_downstairs_accel_linear.iloc[:, [1, 2, 3]]);
+accelerationLinearMag = Measurement("tBodyAccMag", calculateMag(df_downstairs_accel_linear, "tBodyAcc"));
 
-measurementsDown = [acceleration, accelerationMag,  gyroscope, gyroscopeMag, accelerationLinear, accelerationLinearMag]
+measurementsDown = [accelerationLinear,  acceleration,  gyroscope, accelerationLinearMag, accelerationMag,  gyroscopeMag]
 
 tables = [];
 for measurement in measurementsDown:
