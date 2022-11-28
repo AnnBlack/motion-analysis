@@ -6,6 +6,59 @@ FILE_NAMES_UPSTAIRS = ["upstairs_with_barometer_1.xls", "upstairs_with_barometer
 FILE_NAME_DOWNSTAIRS = ["downstairs_with_barometer_1.xls", "downstairs_with_barometer_2.xls"]
 
 
+# COLUMNS_NAME = ['tBodyAcc-mean()',
+#                 'tBodyAcc-std()',
+#                 'tBodyAcc-mad()',
+#                 'tBodyAcc-max()',
+#                 'tBodyAcc-min()',
+#                 'tBodyAcc-energy()',
+#                 'tBodyAcc-iqr()',
+#
+#                 'tGravityAcc-mean()',
+#                 'tGravityAcc-std()',
+#                 'tGravityAcc-mad()',
+#                 'tGravityAcc-max()',
+#                 'tGravityAcc-min()',
+#                 'tGravityAcc-energy()',
+#                 'tGravityAcc-iqr()',
+#
+#                 'tBodyGyro-mean()',
+#                 'tBodyGyro-std()',
+#                 'tBodyGyro-mad()',
+#                 'tBodyGyro-max()',
+#                 'tBodyGyro-min()',
+#                 'tBodyGyro-energy()',
+#                 'tBodyGyro-iqr()-X',
+#
+#                 'tBodyAccMag-mean()',
+#                 'tBodyAccMag-std()',
+#                 'tBodyAccMag-mad()',
+#                 'tBodyAccMag-max()',
+#                 'tBodyAccMag-min()',
+#                 'tBodyAccMag-energy()',
+#                 'tBodyAccMag-iqr()',
+#
+#                 'tGravityAccMag-mean()',
+#                 'tGravityAccMag-std()',
+#                 'tGravityAccMag-mad()',
+#                 'tGravityAccMag-max()',
+#                 'tGravityAccMag-min()',
+#                 'tGravityAccMag-energy()',
+#                 'tGravityAccMag-iqr()',
+#
+#                 'tBodyGyroMag-mean()',
+#                 'tBodyGyroMag-std()',
+#                 'tBodyGyroMag-mad()',
+#                 'tBodyGyroMag-max()',
+#                 'tBodyGyroMag-min()',
+#                 'tBodyGyroMag-energy()',
+#                 'tBodyGyroMag-iqr()',
+#
+#                 'subject',
+#                 'Activity'
+#
+#                 ]
+
 def get_data_frames(file_names_list, accel_df=[], gyro_df=[], accel_linear_df=[]):
     for name in file_names_list:
         name = FILE_PATH + name
@@ -20,6 +73,7 @@ def get_data_frames(file_names_list, accel_df=[], gyro_df=[], accel_linear_df=[]
 df_upstairs_accel = pd.concat(df_upstairs_accel_list)
 df_upstairs_gyro = pd.concat(df_upstairs_gyro_list)
 df_upstairs_accel_linear = pd.concat(df_upstairs_accel_linear_list)
+
 [df_downstairs_accel_list, df_downstairs_gyro_list, df_downstairs_accel_linear_list] = \
     get_data_frames(FILE_NAME_DOWNSTAIRS)
 df_downstairs_accel = pd.concat(df_downstairs_accel_list)
@@ -105,20 +159,28 @@ class Measurement:
         self.source = source
 
 
-acceleration = Measurement("tGravityAcc", df_upstairs_accel.iloc[:, [1, 2, 3]])
+accelerationUp = Measurement("tGravityAcc", df_upstairs_accel.iloc[:, [1, 2, 3]])
 # to be separated into tBody and tLinear by a low pass Butterworth filter with a corner frequency of 0.3 Hz.
-accelerationMag = Measurement("tGravityAccMag", calculate_magnitude(df_upstairs_accel, "tGravityAcc"))
-gyroscope = Measurement("tBodyGyro", df_upstairs_gyro.iloc[:, [1, 2, 3]])
-gyroscopeMag = Measurement("tBodyGyroMag", calculate_magnitude(df_upstairs_gyro, "tBodyGyro"))
-accelerationLinear = Measurement("tBodyAcc", df_upstairs_accel_linear.iloc[:, [1, 2, 3]])
-accelerationLinearMag = Measurement("tBodyAccMag", calculate_magnitude(df_upstairs_accel_linear, "tBodyAcc"))
+accelerationMagUp = Measurement("tGravityAccMag", calculate_magnitude(df_upstairs_accel, "tGravityAcc"))
+gyroscopeUp = Measurement("tBodyGyro", df_upstairs_gyro.iloc[:, [1, 2, 3]])
+gyroscopeMagUp = Measurement("tBodyGyroMag", calculate_magnitude(df_upstairs_gyro, "tBodyGyro"))
+accelerationLinearUp = Measurement("tBodyAcc", df_upstairs_accel_linear.iloc[:, [1, 2, 3]])
+accelerationLinearMagUp = Measurement("tBodyAccMag", calculate_magnitude(df_upstairs_accel_linear, "tBodyAcc"))
 
-measurementsUp = [accelerationLinear, acceleration, gyroscope, accelerationLinearMag, accelerationMag, gyroscopeMag]
+measurementsUp = [
+    accelerationLinearUp,
+    accelerationUp,
+    gyroscopeUp,
+    accelerationLinearMagUp,
+    accelerationMagUp,
+    gyroscopeMagUp
+]
 
 tables = []
+
 for measurement in measurementsUp:
     for function in functions:
-        table = calculate_generic(function.__name__, function, measurement.source, measurement.name, 200, -4)
+        table = calculate_generic(function.__name__, function, measurement.source, measurement.name, 120, -1)
         tables.append(table)
 
 tableUp = pd.concat(tables, axis=1)
@@ -138,16 +200,18 @@ measurementsDown = [accelerationLinear, acceleration, gyroscope, accelerationLin
 tables = []
 for measurement in measurementsDown:
     for function in functions:
-        table = calculate_generic(function.__name__, function, measurement.source, measurement.name, 200, -4)
+        table = calculate_generic(function.__name__, function, measurement.source, measurement.name, 120, -1)
         tables.append(table)
 
 tableDown = pd.concat(tables, axis=1)
 label = ["WALKING_DOWNSTAIRS"] * len(tableDown.index)
 tableDown["Activity"] = label
 
-fullTable = pd.concat([tableUp, tableDown])
+fullTable = pd.concat([tableUp, tableUp, tableUp, tableDown, tableDown, tableDown])
 
-fullTable.to_csv("./prepared_tables/fullTable.csv", index=False, mode='w+')
+fullTable.to_csv("./prepared_tables/fullTable_new_records.csv", index=False, mode='w+')
 print(fullTable)
+
+
 
 # %%
