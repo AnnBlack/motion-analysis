@@ -88,7 +88,9 @@ df_downstairs_accel_linear = pd.concat(df_downstairs_accel_linear_list)
 
 
 def calculate_generic(fn_name, func, source_df, data_name, chunk_amount, start_index):
-    calculation = fn_name.strip("get_")
+    stripped_name = fn_name.strip("get")
+    calculation = stripped_name.strip("_")
+
     if len(source_df.columns) > 1:
         X = data_name + "-" + calculation + "()" + "-X"
         Y = data_name + "-" + calculation + "()" + "-Y"
